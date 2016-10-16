@@ -31,6 +31,7 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 import com.apps4av.avarehelper.connections.ConnectionFactory;
+import com.apps4av.avarehelper.storage.Preferences;
 import com.apps4av.avarehelper.utils.GenericCallback;
 import com.apps4av.avarehelper.utils.Logger;
 
@@ -46,6 +47,7 @@ public class MainActivity extends ActionBarActivity implements
     private BackgroundService mService;
 
     private HashMap<String, String> mState;
+    private Preferences mPref;
 
     private Fragment[] mFragments = new Fragment[10];
 
@@ -74,7 +76,8 @@ public class MainActivity extends ActionBarActivity implements
         mTextStatus = (TextView)view.findViewById(R.id.main_text_status);
         Logger.setTextView(mTextLog);
         setContentView(view);
-        
+
+        mPref = new Preferences(getApplicationContext());
         /*
          * Start service now, bind later. This will be no-op if service is already running
          */
@@ -87,8 +90,8 @@ public class MainActivity extends ActionBarActivity implements
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
         Bundle args = new Bundle();
         int pos = 0;
-        mFragments[pos++] = new BlueToothInFragment();
         mFragments[pos++] = new WiFiInFragment();
+        mFragments[pos++] = new BlueToothInFragment();
         mFragments[pos++] = new XplaneFragment();
         mFragments[pos++] = new MsfsFragment();
         mFragments[pos++] = new BlueToothOutFragment();
@@ -108,9 +111,9 @@ public class MainActivity extends ActionBarActivity implements
         new ArrayAdapter<String>(actionBar.getThemedContext(),
                 android.R.layout.simple_list_item_1,
                 android.R.id.text1, new String[] {
-                getString(R.string.Bluetooth), 
-                getString(R.string.WIFI), 
-                getString(R.string.XPlane), 
+                getString(R.string.WIFI),
+                getString(R.string.Bluetooth),
+                getString(R.string.XPlane),
                 getString(R.string.MSFS), 
                 getString(R.string.AP), 
                 getString(R.string.Play), 
@@ -146,7 +149,14 @@ public class MainActivity extends ActionBarActivity implements
         else {
             //newly created, compute data
             mState = new HashMap<String, String>();
-            mState.put("fragmentIndex", "0");
+            try {
+                int id = mPref.getFragmentIndex();
+                if(id >= 0) {
+                    actionBar.setSelectedNavigationItem(id);
+                }
+            }
+            catch (Exception e) {
+            }
         }
     }
 
@@ -216,19 +226,20 @@ public class MainActivity extends ActionBarActivity implements
 
         // Store fragment we are showing now
         mState.put("fragmentIndex", Integer.toString(itemPosition));
+        mPref.setFragmentIndex(itemPosition);
 
         switch(itemPosition) {
         
             case 0:
-                BlueToothInFragment btin = (BlueToothInFragment) mFragments[itemPosition];
-                fragmentTransaction.replace(R.id.detailFragment, btin);
-                break;
-                
-            case 1:
                 WiFiInFragment wfin = (WiFiInFragment) mFragments[itemPosition];
                 fragmentTransaction.replace(R.id.detailFragment, wfin);
                 break;
-           
+            case 1:
+                BlueToothInFragment btin = (BlueToothInFragment) mFragments[itemPosition];
+                fragmentTransaction.replace(R.id.detailFragment, btin);
+                break;
+
+
             case 2:
                 XplaneFragment xp = (XplaneFragment) mFragments[itemPosition];
                 fragmentTransaction.replace(R.id.detailFragment, xp);
